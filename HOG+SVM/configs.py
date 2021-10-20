@@ -15,3 +15,6 @@ kernel_y=np.array(kernel_y)
 
 cell_x=8
 cell_y=8
+
+block_x=2
+block_y=2

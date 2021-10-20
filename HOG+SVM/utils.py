@@ -1,9 +1,14 @@
+from re import A
+
+from numpy.lib.function_base import append
 import configs
 import cv2
 import numpy as np
 
 c_x=configs.cell_x
 c_y=configs.cell_y
+b_x=configs.block_x
+b_y=configs.block_y
 
 def read_pos_route():
     pos=[]
@@ -58,9 +63,26 @@ def histogram(Img_max,arc_max,pos_x,pos_y):
     length=np.size(Img_max,0)
     width=np.size(Img_max,1)
     res=np.zeros(10)
+    res_=np.zeros(9)
     for i in range(pos_x*c_x,(pos_x+1)*c_x):
         for j in range(pos_y*c_y,(pos_y+1)*c_y):
             minn=int(arc_max[i][j]/20)
             res[minn]+=(20*(minn+1)-arc_max[i][j])/20*Img_max[i][j]
             res[min(minn+1,9)]+=(arc_max[i][j]-20*minn)/20*Img_max[i][j]
-    return res
+    res_=res[0:9]
+    #print(res)
+    res_[0]+=res[9]
+    return res_
+
+def NORM(res,pos_x,pos_y):
+    a=[]
+    for i in range(pos_x,pos_x+b_x):
+        for j in range(pos_y,pos_y+b_y):
+            for k in range(0,9):
+                a.append(res[i][j][k])
+    tot=0.
+    for i in range(0,9*b_x*b_y):
+        tot+=a[i]
+    for i in range(0,9*b_x*b_y):
+        a[i]/=tot
+    return a

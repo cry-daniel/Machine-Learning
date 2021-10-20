@@ -1,2 +1,3 @@
 HOG+SVM/INRIAPerson/
-HOG+SVM/__pycache__
+HOG+SVM/__pycache__/
+HOG+SVM/data/
