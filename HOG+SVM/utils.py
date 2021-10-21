@@ -1,6 +1,5 @@
-from re import A
-
-from numpy.lib.function_base import append
+import matplotlib.pyplot as plt
+#from numpy.lib.function_base import append
 import configs
 import cv2
 import numpy as np
@@ -86,3 +85,49 @@ def NORM(res,pos_x,pos_y):
     for i in range(0,9*b_x*b_y):
         a[i]/=tot
     return a
+
+def show_pic(img,Img_y,Img_x,Img):
+    plt.subplot(2,2,1)
+    plt.title('origin')
+    plt.imshow(img)
+    #print(np.size(img,0),'x',np.size(img,1),'x',np.size(img,2))
+    plt.subplot(2,2,2)
+    plt.title('y position')
+    plt.imshow(Img_y)
+    
+    plt.subplot(2,2,3)
+    plt.title('x position')
+    plt.imshow(Img_x)
+    
+    plt.subplot(2,2,4)
+    plt.title('x * y')
+    plt.imshow(Img)
+    plt.show()
+
+def cal_HOG(route):
+    img=read_img(route)
+    size = (64,128)
+    img= cv2.resize(img, size, interpolation=cv2.INTER_AREA)
+    x=np.size(img,0)
+    y=np.size(img,1)
+    #print(x,y)
+    Img_x=cv2.filter2D(img,cv2.CV_16S,configs.kernel_x)
+    Img_y=cv2.filter2D(img,cv2.CV_16S,configs.kernel_y)
+    Img=abs(Img_x)+abs(Img_y)
+    #show_pic(img,Img_y,Img_x,Img)
+    arc_max,Img_max=cal_arctan(Img,Img_x,Img_y)
+    #print(arc_max)
+    res=np.zeros([100,100,9])
+    for i in range(0,int(x/configs.cell_x)):
+        for j in range(0,int(y/configs.cell_y)):
+            res[i][j]=histogram(Img_max,arc_max,i,j)  
+    vec=[]
+    for i in range(0,int(x/(configs.cell_x))-1):
+        for j in range(0,int(y/(configs.cell_y))-1):
+            a=NORM(res,i,j)
+            for k in a:
+                vec.append(k)
+    if len(vec)!=configs.HOG_size:
+        print("error!")
+        input()
+    return np.array(vec)

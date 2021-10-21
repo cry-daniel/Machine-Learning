@@ -18,3 +18,5 @@ cell_y=8
 
 block_x=2
 block_y=2
+
+HOG_size=3780
