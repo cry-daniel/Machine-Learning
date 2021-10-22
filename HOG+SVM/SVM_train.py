@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-from numpy.core.fromnumeric import size
 import utils
 import configs
 
@@ -21,17 +20,26 @@ neg_len=np.size(neg_training_data,0)
 training_data=np.vstack((pos_training_data,neg_training_data))
 training_label=np.vstack((pos_training_label,neg_training_label))
 
-print(np.size(training_data,1))
-
 training_data=np.array(training_data,dtype='float32')
-training_label=np.array(training_label,dtype='float32')
+training_label=np.array(training_label,dtype='int32')
 
-svm=utils.svm_config()
+#print(training_data)
+
+#print(np.size(training_data,0),np.size(training_data,1))
+#print(np.size(training_label,0),np.size(training_label,1))
 
 print('Starting training')
 
-utils.svm_train(svm,training_data,training_label)
+#clf=utils.svm_train(training_data,training_label)
+clf=utils.svm_load('./data/svm.model')
 
-utils.svm_save(svm,'./data/svm.mat')
+route='test/pos/crop_000007b.png'
+test_data=np.array([utils.cal_HOG(route)],dtype='float32')
+print(test_data)
+test_label=clf.predict(test_data)
 
 print('Finish training!')
+
+utils.svm_save(clf)
+
+print(test_label)
