@@ -6,6 +6,8 @@ neg_route='./INRIAPerson/train/neg.lst'
 test_pos_route='./INRIAPerson/test/pos.lst'
 test_neg_route='./INRIAPerson/test/neg.lst'
 
+test_route='draw/001.png'
+
 #sobel 算子
 #kernel_x=[[-1,-2,-1],[0,0,0],[1,2,1]]
 #kernel_y=[[-1,0,1],[-2,0,2],[-1,0,1]]

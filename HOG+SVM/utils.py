@@ -87,7 +87,6 @@ def NORM(res,pos_x,pos_y):  #归一化
         tot+=a[i]
     for i in range(0,9*b_x*b_y):
         if tot>0:
-            a[i]*=1e4
             a[i]/=tot
     return a
 
@@ -109,65 +108,8 @@ def show_pic(img,Img_y,Img_x,Img):  #显示图片，顺序：原图，Y偏导，
     plt.imshow(Img)
     plt.show()
 
-def cal_HOG(route):     #计算HOG，返回值为大小为configs.HOG_size的向量
-    img=read_img(route)
-    size = (64,128)
-    img= cv2.resize(img, size, interpolation=cv2.INTER_AREA)
-    x=np.size(img,0)
-    y=np.size(img,1)
-    #print(x,y)
-    Img_x=cv2.filter2D(img,cv2.CV_16S,configs.kernel_x)
-    Img_y=cv2.filter2D(img,cv2.CV_16S,configs.kernel_y)
-    Img=abs(Img_x)+abs(Img_y)
-    #show_pic(img,Img_y,Img_x,Img)
-    arc_max,Img_max=cal_arctan(Img,Img_x,Img_y)
-    #print(arc_max)
-    res=np.zeros([100,100,9])
-    for i in range(0,int(x/configs.cell_x)):
-        for j in range(0,int(y/configs.cell_y)):
-            res[i][j]=histogram(Img_max,arc_max,i,j)  
-    vec=[]
-    for i in range(0,int(x/(configs.cell_x))-1):
-        for j in range(0,int(y/(configs.cell_y))-1):
-            a=NORM(res,i,j)
-            for k in a:
-                vec.append(k)
-    if len(vec)!=configs.HOG_size:
-        print("error!")
-        input()
-    return np.array(vec)
 
-'''
-def svm_config():   #svm的配置参数
-    svm = cv2.ml.SVM_create()
-    svm.setType(cv2.ml.SVM_C_SVC)
-    svm.setKernel(cv2.ml.SVM_INTER)
-    svm.setC(0.01)
-    svm.setCoef0(0)
-    svm.setCoef0(0.0)
-    svm.setDegree(3)
-    criteria = (cv2.TERM_CRITERIA_MAX_ITER + cv2.TERM_CRITERIA_EPS, 1000, 1e-3)
-    svm.setTermCriteria(criteria)
-    svm.setGamma(1.0)
-    svm.setKernel(cv2.ml.SVM_INTER)
-    svm.setNu(0.5)
-    svm.setP(0.1)
-    svm.setC(0.01)
-    svm.setType(cv2.ml.SVM_EPS_SVR)
-    return svm
 
-def svm_train(svm,features,labels): #svm训练
-    svm.train(features,cv2.ml.ROW_SAMPLE,labels)
-
-def svm_save(svm,name): #svm参数保存
-    svm.save(name)
-        
- 
-def svm_load(name): #svm加载参数
-    svm = cv2.ml.SVM_load(name)
-    return svm
-
-'''
 def read_test_pos_route():   #读取正确训练图片路径（最后）
     pos=[]
     fp=open(configs.test_pos_route,'r')
@@ -185,7 +127,10 @@ def read_test_neg_route():   #读取错误训练图片路径（最后）
     return neg
 
 def svm_train(training_data,training_label):
-    clf = svm.SVC(C=0.8, kernel='rbf', gamma=20, decision_function_shape='ovr')
+    #clf = svm.SVC(C=1000, kernel='rbf', gamma=0.1, decision_function_shape='ovr')
+    #clf=svm.SVR(C=10000,epsilon=1e-6)
+    clf = svm.SVC(kernel="linear", probability=True)
+    #clf=svm.LinearSVC(C=10000,max_iter=25000)
     clf.fit(training_data,training_label.ravel())
     return clf
 
@@ -214,12 +159,13 @@ def save_test_data(route):
         img=cal_HOG(i)
         np.array([img])
         test_data[tot]=img
-        print(test_data[tot])
+        #print(test_data[tot])
         tot+=1
-        input()
+        #input()
     test_data=np.array(test_data,dtype='float32')
-    print(test_data)
+    #print(test_data)
     np.save('./data/test_data.npy',test_data)
+
 
 def check_pos_or_neg(clf,test_data):
     print('Starting predicting!')
@@ -227,62 +173,31 @@ def check_pos_or_neg(clf,test_data):
     print('Prediction finish!')
     return par
 
+def cal_HOG(route):     #计算HOG，返回值为大小为configs.HOG_size的向量
+    img=read_img(route)
+    size = (64,128)
+    img= cv2.resize(img, size, interpolation=cv2.INTER_AREA)
+    #print(np.size(img,0),np.size(img,1),np.size(img,2))
+    hog = cv2.HOGDescriptor((64, 128), (16, 16), (8, 8), (8, 8), 9)
+    return np.array(hog.compute(img).T)
+
 def cal_neg_HOG(route):     #计算HOG，返回值为大小为configs.HOG_size的向量
     img=read_img(route)
-    (length,width)=np.size(img,0),np.size(img,1)
-    #print(length,width)
-    delta_len=int((length-64)/10)
-    delta_wid=int((width-128)/10)
-    #print(delta_len,delta_wid)
-    ans=np.zeros((10,configs.HOG_size))
+    (length,width)=[np.size(img,0),np.size(img,1)]
+    ans=[]
+    hog = cv2.HOGDescriptor((64, 128), (16, 16), (8, 8), (8, 8), 9)
     for l in range(10):
         #print(l)
-        ran_len=random.randint(0,9)
-        ran_wid=random.randint(0,9)
-        #print(ran_len*delta_len,ran_wid*delta_wid)
-        Img=np.zeros((64,128,3))
-        for i in range(64):
-            for j in range(128):
-                for k in range(3):
-                    Img[i][j][k]=img[i+ran_len*delta_len][j+ran_wid*delta_wid][k]
-        Img=np.array(Img,dtype='uint8')
+        rand0 = random.randint(0, np.size(img,0) - 128)
+        rand1 = random.randint(0, np.size(img,1) - 64)
+        Img = img[rand0:rand0 + 128, rand1:rand1 + 64, ::-1]
         '''
-        print(Img)
-        plt.subplot(2,1,1)
         plt.imshow(Img)
-        plt.subplot(2,1,2)
-        plt.imshow(img)
         plt.show()
-        print('img')
-        print(img)
+        #print(np.size(img,0),np.size(img,1),np.size(img,2))
         '''
-        #size = (64,128)
-        #print(np.size(Img,0),np.size(Img,1))
-        #input()
-        #Img= cv2.resize(Img, size, interpolation=cv2.INTER_AREA)
-        x=np.size(Img,0)
-        y=np.size(Img,1)
-        Img_x=cv2.filter2D(Img,cv2.CV_8U,configs.kernel_x)
-        Img_y=cv2.filter2D(Img,cv2.CV_8U,configs.kernel_y)
-        Img=abs(Img_x)+abs(Img_y)
-        #show_pic(img,Img_y,Img_x,Img)
-        arc_max,Img_max=cal_arctan(Img,Img_x,Img_y)
-        #print(arc_max)
-        res=np.zeros([100,100,9])
-        for i in range(0,int(x/configs.cell_x)):
-            for j in range(0,int(y/configs.cell_y)):
-                res[i][j]=histogram(Img_max,arc_max,i,j)  
-        vec=[]
-        for i in range(0,int(x/(configs.cell_x))-1):
-            for j in range(0,int(y/(configs.cell_y))-1):
-                a=NORM(res,i,j)
-                for k in a:
-                    vec.append(k)
-        if len(vec)!=configs.HOG_size:
-            print("error!")
-            input()
-        #print(vec)
-        ans[l]+=np.array(vec)
-        #print(ans[l])
+        ans.append(hog.compute(Img).T)
+    return np.array(ans)
     #print(ans)
     #input()
+
