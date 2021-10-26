@@ -67,6 +67,4 @@ test_label=clf.predict(test_data)
 
 print('Finish training!')
 
-
-
 print(test_label)
