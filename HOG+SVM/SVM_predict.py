@@ -90,12 +90,21 @@ except:
     print('X & Y not Find')
     x,y=init_xy(test_data,clf)
 
-#x_new=np.linspace(0,1,101)
-#f=interpolate.interp1d(x,y,kind='cubic')
-#y_new=f(x_new)
+x_new=np.linspace(0,1,101)
+f=interpolate.interp1d(x,y,kind='slinear')
+y_new=f(x_new)
+tot=0
+for i in range(0,np.size(x_new)-2):
+    tot+=(y_new[i]+y_new[i+1])*(x_new[i+1]-x_new[i])/2
+
+print(tot)
+
 #plt.plot(x_new,y_new)
+plt.xlabel('FPRate')
+plt.ylabel('TPRate')
+plt.title('AUC')
 plt.plot(x,y,'*')
-plt.plot(x,y)
+#plt.plot(x,y)
 plt.show()
 
 '''
